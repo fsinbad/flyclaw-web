@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyClaw - 航班查询</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --card-hover: #273548;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-hover: #7dd3fc;
+  --danger: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --price: #fbbf24;
+  --radius: 8px;
+  --radius-sm: 6px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+nav {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+nav .logo { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
+nav .logo span { color: var(--accent); }
+nav .links { display: flex; gap: 8px; }
+nav .links a {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+nav .links a:hover, nav .links a.active { color: var(--text); background: var(--card-hover); }
+nav .version { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+.page-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
+.page-subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 4px;
+  width: fit-content;
+}
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.tab-btn.active { background: var(--bg); color: var(--text); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.search-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.form-grid { display: grid; gap: 16px; }
+.form-grid-2 { grid-template-columns: 1fr 1fr; }
+.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+.form-group .hint { font-size: 0.75rem; color: #475569; }
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+input::placeholder { color: #475569; }
+
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+.btn-primary { background: var(--accent); color: #0f172a; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--card-hover); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.advanced-toggle {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-top: 16px;
+  user-select: none;
+}
+.advanced-toggle:hover { color: var(--accent); }
+.advanced-options { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.advanced-options.show { display: block; }
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  color: var(--muted);
+  min-height: 48px;
+}
+.status-bar .count { color: var(--accent); font-weight: 600; }
+
+.flight-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 12px;
+  transition: border-color 0.15s;
+}
+.flight-card:hover { border-color: var(--accent); }
+
+.flight-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.flight-number {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.flight-airline { font-size: 0.85rem; color: var(--muted); margin-left: 8px; }
+.flight-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--price);
+}
+
+.flight-route {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.airport-code { font-size: 1.1rem; font-weight: 600; }
+.airport-name { font-size: 0.85rem; color: var(--muted); }
+.route-arrow { color: var(--muted); font-size: 1.2rem; }
+
+.flight-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.flight-details span { display: flex; align-items: center; gap: 4px; }
+.flight-details .label { color: #64748b; }
+
+.tag {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tag-source { background: rgba(56,189,248,0.15); color: var(--accent); }
+.tag-stops { background: rgba(74,222,128,0.15); color: var(--success); }
+.tag-cabin { background: rgba(251,191,36,0.15); color: var(--warning); }
+.tag-status { background: rgba(248,113,113,0.15); color: var(--danger); }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-state .icon { font-size: 3rem; margin-bottom: 16px; }
+.empty-state p { font-size: 0.9rem; }
+
+.error-state {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
+.resolved-info {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.segment-list {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.segment-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.autocomplete-wrapper { position: relative; }
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 200;
+  display: none;
+}
+.autocomplete-dropdown.show { display: block; }
+.autocomplete-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.1s;
+  display: flex;
+  justify-content: space-between;
+}
+.autocomplete-item:hover { background: var(--card-hover); }
+.autocomplete-item .code { color: var(--accent); font-weight: 600; }
+
+@media (max-width: 768px) {
+  .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+  .flight-header { flex-direction: column; }
+  .flight-route { flex-direction: column; gap: 4px; }
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">✈️ Fly<span>Claw</span></div>
+  <div class="links">
+    <a href="/">首页</a>
+    <a href="/guide">教程</a>
+    <a href="/config">配置</a>
+    <a href="/query" class="active">查询</a>
+  </div>
+  <div class="version">v{{ version }}</div>
+</nav>
+
+<div class="container">
+  <h1 class="page-title">航班查询</h1>
+  <p class="page-subtitle">按航班号查询或按航线搜索——多数据源并发聚合检索</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('flight')">✈️ 航班号查询</button>
+    <button class="tab-btn" onclick="switchTab('route')">🗺️ 航线搜索</button>
+  </div>
+
+  <!-- Flight Number Query -->
+  <div class="tab-content active" id="tab-flight">
+    <div class="search-panel">
+      <div class="form-grid form-grid-3">
+        <div class="form-group">
+          <label>航班号 *</label>
+          <input type="text" id="f-flight" placeholder="例如: CA981, MU5110, 3U88" onkeydown="if(event.key==='Enter')queryByFlight()">
+          <span class="hint">IATA 航班号（含航空公司代码）</span>
+        </div>
+        <div class="form-group">
+          <label>日期（可选）</label>
+          <input type="date" id="f-date">
+          <span class="hint">按出发日期筛选</span>
+        </div>
+        <div class="form-group">
+          <label>货币</label>
+          <select id="f-currency">
+            <option value="cny">人民币 CNY (¥)</option>
+            <option value="usd">美元 USD ($)</option>
+            <option value="original">保留原始</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="queryByFlight()" id="btn-flight">
+        🔍 查询航班
+      </button>
+    </div>
+    <div id="flight-results"></div>
+  </div>
+
+  <!-- Route Search -->
+  <div class="tab-content" id="tab-route">
+    <div class="search-panel">
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label>出发地 *</label>
+          <div class="autocomplete-wrapper">
+            <input type="text" id="r-from" placeholder="IATA 代码 / 城市名（例如: PVG, 上海, Shanghai）" oninput="debounceAirportSearch('r-from')" onfocus="debounceAirportSearch('r-from')" autocomplete="off">
+            <div class="autocomplete-dropdown" id="r-from-dd"></div>
+          </div>
+          <span class="hint">城市级搜索: "上海" → PVG + SHA</span>
+        </div>
+        <div class="form-group">
+          <label>目的地 *</label>
+          <div class="autocomplete-wrapper">
+            <input type="text" id="r-to" placeholder="IATA 代码 / 城市名（例如: JFK, 纽约, New York）" oninput="debounceAirportSearch('r-to')" onfocus="debounceAirportSearch('r-to')" autocomplete="off">
+            <div class="autocomplete-dropdown" id="r-to-dd"></div>
+          </div>
+          <span class="hint">城市级搜索: "纽约" → JFK + EWR + LGA</span>
+        </div>
+      </div>
+      <div class="form-grid form-grid-3" style="margin-top: 16px;">
+        <div class="form-group">
+          <label>出发日期 *</label>
+          <input type="date" id="r-date">
+        </div>
+        <div class="form-group">
+          <label>舱位等级</label>
+          <select id="r-cabin">
+            <option value="economy">经济舱</option>
+            <option value="premium">超级经济舱</option>
+            <option value="business">商务舱</option>
+            <option value="first">头等舱</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>货币</label>
+          <select id="r-currency">
+            <option value="cny">人民币 CNY (¥)</option>
+            <option value="usd">美元 USD ($)</option>
+            <option value="original">保留原始</option>
+          </select>
+        </div>
+      </div>
+
+      <span class="advanced-toggle" onclick="toggleAdvanced()">⚙️ 高级选项 ▸</span>
+      <div class="advanced-options" id="advanced-options">
+        <div class="form-grid form-grid-4">
+          <div class="form-group">
+            <label>成人</label>
+            <input type="number" id="r-adults" value="1" min="1" max="9">
+          </div>
+          <div class="form-group">
+            <label>儿童</label>
+            <input type="number" id="r-children" value="0" min="0" max="9">
+          </div>
+          <div class="form-group">
+            <label>婴儿</label>
+            <input type="number" id="r-infants" value="0" min="0" max="9">
+          </div>
+          <div class="form-group">
+            <label>最多经停</label>
+            <select id="r-stops">
+              <option value="0">仅直飞</option>
+              <option value="1">最多 1 次经停</option>
+              <option value="2">最多 2 次经停</option>
+              <option value="any">不限</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid form-grid-3" style="margin-top: 16px;">
+          <div class="form-group">
+            <label>返程日期</label>
+            <input type="date" id="r-return">
+            <span class="hint">用于往返搜索</span>
+          </div>
+          <div class="form-group">
+            <label>排序方式</label>
+            <select id="r-sort">
+              <option value="">默认排序</option>
+              <option value="cheapest">价格最低</option>
+              <option value="fastest">飞行最快</option>
+              <option value="departure">出发时间</option>
+              <option value="arrival">到达时间</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>最大结果数</label>
+            <input type="number" id="r-limit" value="" min="1" placeholder="不限制">
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="searchByRoute()" id="btn-route" style="margin-top:16px;">
+        🗺️ 搜索航线
+      </button>
+    </div>
+    <div id="route-results"></div>
+  </div>
+</div>
+
+<script>
+let activeTab = 'flight';
+let airportTimeout = null;
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', (i === 0 && tab === 'flight') || (i === 1 && tab === 'route')));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function toggleAdvanced() {
+  document.getElementById('advanced-options').classList.toggle('show');
+  const toggle = document.querySelector('.advanced-toggle');
+  toggle.textContent = toggle.textContent.includes('▸') ? '⚙️ 高级选项 ▾' : '⚙️ 高级选项 ▸';
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (loading) {
+    btn.disabled = true;
+    btn.dataset.origText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> 正在查询...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.origText || btn.innerHTML;
+  }
+}
+
+async function queryByFlight() {
+  const flight = document.getElementById('f-flight').value.trim();
+  if (!flight) return alert('请输入航班号');
+
+  const date = document.getElementById('f-date').value;
+  const currency = document.getElementById('f-currency').value;
+
+  setLoading('btn-flight', true);
+  const container = document.getElementById('flight-results');
+  container.innerHTML = '<div class="status-bar"><span class="spinner"></span> 正在多数据源并发查询...</div>';
+
+  try {
+    const params = new URLSearchParams({ flight, currency });
+    if (date) params.set('date', date);
+    const resp = await fetch('/api/query/flight?' + params.toString());
+    const data = await resp.json();
+
+    if (data.status === 'ok') {
+      container.innerHTML = renderResults(data, 'flight');
+    } else {
+      container.innerHTML = `<div class="error-state">⚠️ ${data.message}</div>`;
+    }
+  } catch (e) {
+    container.innerHTML = `<div class="error-state">⚠️ Query failed: ${e.message}</div>`;
+  }
+  setLoading('btn-flight', false);
+}
+
+async function searchByRoute() {
+  const from = document.getElementById('r-from').value.trim();
+  const to = document.getElementById('r-to').value.trim();
+  const date = document.getElementById('r-date').value;
+
+  if (!from || !to) return alert('请输入出发地和目的地');
+  if (!date) return alert('请选择出发日期');
+
+  setLoading('btn-route', true);
+  const container = document.getElementById('route-results');
+  container.innerHTML = '<div class="status-bar"><span class="spinner"></span> 正在跨多个数据源搜索...</div>';
+
+  const params = new URLSearchParams({ from, to, date });
+  const fields = {
+    cabin: 'r-cabin', currency: 'r-currency', adults: 'r-adults',
+    children: 'r-children', infants: 'r-infants', stops: 'r-stops',
+    sort: 'r-sort', limit: 'r-limit',
+  };
+  for (const [key, id] of Object.entries(fields)) {
+    const val = document.getElementById(id).value;
+    if (val) params.set(key, val);
+  }
+  const returnDate = document.getElementById('r-return').value;
+  if (returnDate) params.set('return_date', returnDate);
+
+  try {
+    const resp = await fetch('/api/search/route?' + params.toString());
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      container.innerHTML = renderResults(data, 'route');
+    } else {
+      container.innerHTML = `<div class="error-state">⚠️ ${data.message}</div>`;
+    }
+  } catch (e) {
+    container.innerHTML = `<div class="error-state">⚠️ Search failed: ${e.message}</div>`;
+  }
+  setLoading('btn-route', false);
+}
+
+function renderResults(data, type) {
+  const results = data.results || [];
+  if (results.length === 0) {
+    return `<div class="empty-state">
+      <div class="icon">🛫</div>
+      <p>未找到航班。请尝试其他搜索参数。</p>
+    </div>`;
+  }
+
+  let resolvedInfo = '';
+  if (type === 'route' && data.resolved_origin && data.resolved_destination) {
+    resolvedInfo = `<div class="resolved-info">已解析: ${data.resolved_origin.join(', ')} → ${data.resolved_destination.join(', ')}</div>`;
+  }
+
+  let html = `<div class="status-bar">
+    <span>找到 <span class="count">${data.count}</span> 个航班</span>
+    ${resolvedInfo}
+  </div>`;
+
+  for (const r of results) {
+    html += renderFlightCard(r);
+  }
+  return html;
+}
+
+function renderFlightCard(r) {
+  const fn = r.flight_number || 'N/A';
+  const airline = r.airline || '';
+  const originIata = r.origin_iata || '';
+  const destIata = r.destination_iata || '';
+  const originCity = r.origin_city || '';
+  const destCity = r.destination_city || '';
+  const dep = formatTime(r.scheduled_departure);
+  const arr = formatTime(r.scheduled_arrival);
+  const price = r.price;
+  const currency = r.currency || 'USD';
+  const curSymbol = currency === 'CNY' ? '¥' : '$';
+  const stops = r.stops;
+  const duration = r.duration_minutes;
+  const status = r.status || '';
+  const source = r.source || '';
+  const aircraft = r.aircraft_type || '';
+  const cabinClass = r.cabin_class || '';
+  const altitude = r.altitude_ft;
+  const speed = r.ground_speed_kts;
+  const delay = r.delay_minutes;
+  const codeshare = r.codeshare_variants || [];
+  const segments = r.segments || [];
+  const layoverCities = r.layover_cities || [];
+  const layoverMinutes = r.layover_minutes || [];
+  const tripType = r.trip_type || '';
+  const returnFn = r.return_flight_number || '';
+  const returnDep = formatTime(r.return_departure);
+  const returnArr = formatTime(r.return_arrival);
+  const returnStops = r.return_stops;
+  const returnDur = r.return_duration_minutes;
+
+  let headerTags = '';
+  if (source) {
+    source.split(',').forEach(s => { headerTags += `<span class="tag tag-source">${s.trim()}</span>`; });
+  }
+  if (stops !== undefined && stops !== null) {
+    headerTags += `<span class="tag tag-stops">${stops === 0 ? '直飞' : stops + ' 次经停'}</span>`;
+  }
+  if (status) headerTags += `<span class="tag tag-status">${status}</span>`;
+  if (cabinClass) headerTags += `<span class="tag tag-cabin">${cabinClass}</span>`;
+
+  let priceHtml = '';
+  if (price !== null && price !== undefined) {
+    const label = tripType === 'round_trip' ? '（往返含税）' : '';
+    priceHtml = `<div class="flight-price">${curSymbol}${price}${label}</div>`;
+  }
+
+  let codeshareHtml = '';
+  if (codeshare.length > 0) {
+    codeshareHtml = `<div style="font-size:0.8rem;color:var(--muted);">代码共享: ${codeshare.join(', ')}</div>`;
+  }
+
+  let detailsHtml = '';
+  if (aircraft) detailsHtml += `<span><span class="label">机型:</span> ${aircraft}</span>`;
+  if (duration) detailsHtml += `<span><span class="label">飞行时长:</span> ${fmtDuration(duration)}</span>`;
+  if (delay) detailsHtml += `<span><span class="label" style="color:var(--danger);">延误:</span> ${delay} 分钟</span>`;
+  if (altitude) detailsHtml += `<span><span class="label">高度:</span> ${altitude} ft</span>`;
+  if (speed) detailsHtml += `<span><span class="label">速度:</span> ${speed} kts</span>`;
+
+  let segmentsHtml = '';
+  if (segments.length > 1) {
+    segmentsHtml = '<div class="segment-list">';
+    segments.forEach((seg, i) => {
+      const loCity = layoverCities[i] || '';
+      const loMin = layoverMinutes[i] || 0;
+      const loStr = i < segments.length - 1 && loCity ? `（经停: ${loCity} ${fmtDuration(loMin)}）` : '';
+      segmentsHtml += `<div class="segment-item">
+        <span style="font-weight:600;">${seg.flight_number || ''}</span>
+        <span>${seg.origin_iata || ''} → ${seg.destination_iata || ''}</span>
+        <span style="color:var(--muted);">${formatTime(seg.departure)} → ${formatTime(seg.arrival)}</span>
+        ${loStr}
+      </div>`;
+    });
+    segmentsHtml += '</div>';
+  }
+
+  let returnHtml = '';
+  if (tripType === 'round_trip') {
+    returnHtml = `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="color:var(--accent);font-weight:600;margin-bottom:8px;">── 返程 ──</div>
+        <div><strong>${returnFn || 'N/A'}</strong> ${r.return_airline || ''}</div>
+        <div>出发: ${returnDep} &nbsp; 到达: ${returnArr}</div>
+        <div style="color:var(--muted);font-size:0.85rem;">
+          ${returnStops !== undefined ? `经停: ${returnStops} 次` : ''}
+          ${returnDur !== undefined ? ` | 飞行时长: ${fmtDuration(returnDur)}` : ''}
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="flight-card">
+      <div class="flight-header">
+        <div>
+          <span class="flight-number">${fn}</span>
+          ${airline ? `<span class="flight-airline">${airline}</span>` : ''}
+          <div style="margin-top:4px;">${headerTags}</div>
+        </div>
+        ${priceHtml}
+      </div>
+      <div class="flight-route">
+        <div><span class="airport-code">${originIata}</span> <span class="airport-name">${originCity}</span></div>
+        <span class="route-arrow">→</span>
+        <div><span class="airport-code">${destIata}</span> <span class="airport-name">${destCity}</span></div>
+      </div>
+      <div style="font-size:0.9rem;margin-bottom:8px;">
+        Departure: ${dep} &nbsp; Arrival: ${arr}
+      </div>
+      ${detailsHtml ? `<div class="flight-details">${detailsHtml}</div>` : ''}
+      ${codeshareHtml}
+      ${segmentsHtml}
+      ${returnHtml}
+    </div>`;
+}
+
+function formatTime(isoStr) {
+  if (!isoStr) return '--';
+  return isoStr.replace('T', ' ').substring(0, 19);
+}
+
+function fmtDuration(minutes) {
+  if (!minutes && minutes !== 0) return '--';
+  const h = Math.floor(Math.abs(minutes) / 60);
+  const m = Math.abs(minutes) % 60;
+  if (h >= 24) { const d = Math.floor(h / 24); const rh = h % 24; return `${d}d ${rh}h ${m}m`; }
+  return `${h}h ${String(m).padStart(2, '0')}m`;
+}
+
+function debounceAirportSearch(fieldId) {
+  clearTimeout(airportTimeout);
+  airportTimeout = setTimeout(() => searchAirports(fieldId), 200);
+}
+
+async function searchAirports(fieldId) {
+  const input = document.getElementById(fieldId);
+  const dd = document.getElementById(fieldId + '-dd');
+  const q = input.value.trim();
+  if (!q || q.length < 1) { dd.classList.remove('show'); return; }
+
+  try {
+    const resp = await fetch('/api/airports?q=' + encodeURIComponent(q));
+    const data = await resp.json();
+    const airports = data.airports || [];
+    if (airports.length === 0) { dd.classList.remove('show'); return; }
+
+    dd.innerHTML = airports.map(a => {
+      const iata = a.iata || a.code || '';
+      const name = a.name_cn || a.name || '';
+      const city = a.city_cn || a.city || '';
+      return `<div class="autocomplete-item" onclick="selectAirport('${fieldId}', '${escapeJs(iata)}', '${escapeJs(city)}')">
+        <span>${escapeHtml(city || name)}</span>
+        <span class="code">${escapeHtml(iata)}</span>
+      </div>`;
+    }).join('');
+    dd.classList.add('show');
+  } catch (e) { /* ignore */ }
+}
+
+function selectAirport(fieldId, iata, name) {
+  document.getElementById(fieldId).value = name || iata;
+  document.getElementById(fieldId + '-dd').classList.remove('show');
+}
+
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escapeJs(s) { return String(s).replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.autocomplete-wrapper')) {
+    document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.classList.remove('show'));
+  }
+});
+</script>
+</body>
+</html>

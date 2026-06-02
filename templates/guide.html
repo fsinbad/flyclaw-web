@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyClaw - 使用教程</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --card-hover: #273548;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-hover: #7dd3fc;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --radius: 8px;
+  --radius-sm: 6px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.7;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+nav {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+nav .logo { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
+nav .logo span { color: var(--accent); }
+nav .links { display: flex; gap: 4px; }
+nav .links a {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+nav .links a:hover, nav .links a.active { color: var(--text); background: var(--card-hover); }
+nav .version { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+
+.container { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+.page-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
+.page-subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+
+.toc {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 32px;
+}
+.toc h3 { font-size: 0.95rem; margin-bottom: 12px; }
+.toc ol { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.toc a { font-size: 0.9rem; }
+
+.section-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.section-card h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.section-card h3 { font-size: 1rem; font-weight: 600; margin: 20px 0 10px; color: var(--accent); }
+.section-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 12px; }
+.section-card ul, .section-card ol { padding-left: 20px; color: var(--muted); font-size: 0.9rem; margin-bottom: 12px; }
+.section-card li { margin-bottom: 6px; }
+
+.code-block {
+  background: #0f172a;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.85rem;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+.code-block .cmd { color: var(--accent); }
+.code-block .cmt { color: #64748b; }
+.code-block .val { color: var(--success); }
+.code-block .param { color: var(--warning); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.85rem;
+}
+table th {
+  background: var(--bg);
+  color: var(--muted);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 500;
+  border-bottom: 2px solid var(--border);
+}
+table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+table td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+table td code { color: var(--accent); font-size: 0.8rem; }
+
+.tip {
+  background: rgba(56,189,248,0.08);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 0.85rem;
+  color: var(--accent-hover);
+}
+.warn {
+  background: rgba(251,191,36,0.08);
+  border-left: 3px solid var(--warning);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 0.85rem;
+  color: var(--warning);
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">✈️ Fly<span>Claw</span></div>
+  <div class="links">
+    <a href="/">首页</a>
+    <a href="/guide" class="active">教程</a>
+    <a href="/config">配置</a>
+    <a href="/query">查询</a>
+  </div>
+  <div class="version">v{{ version }}</div>
+</nav>
+
+<div class="container">
+  <h1 class="page-title">📖 FlyClaw 使用教程</h1>
+  <p class="page-subtitle">快速掌握 FlyClaw 全部功能——航班号查询、航线搜索、配置管理、API 调用</p>
+
+  <div class="toc">
+    <h3>📑 目录</h3>
+    <ol>
+      <li><a href="#quickstart">快速开始</a></li>
+      <li><a href="#flight-query">按航班号查询</a></li>
+      <li><a href="#route-search">按航线搜索</a></li>
+      <li><a href="#city-search">城市级智能搜索</a></li>
+      <li><a href="#round-trip">往返搜索</a></li>
+      <li><a href="#advanced">高级选项</a></li>
+      <li><a href="#config-manage">配置管理</a></li>
+      <li><a href="#api">REST API 调用</a></li>
+      <li><a href="#faq">常见问题</a></li>
+    </ol>
+  </div>
+
+  <!-- Quick Start -->
+  <div class="section-card" id="quickstart">
+    <h2>🚀 一、快速开始</h2>
+    <p>FlyClaw 网页服务启动后，在浏览器中打开即可使用。默认地址为 <code>http://127.0.0.1:8080</code>。</p>
+
+    <h3>启动 Web 服务器</h3>
+    <div class="code-block">
+<span class="cmt"># 默认端口 8080，监听所有网络接口</span>
+<span class="cmd">python3 server.py</span>
+
+<span class="cmt"># 自定义端口</span>
+<span class="cmd">python3 server.py</span> <span class="param">--port</span> <span class="val">9090</span>
+
+<span class="cmt"># 仅本地访问</span>
+<span class="cmd">python3 server.py</span> <span class="param">--host</span> <span class="val">127.0.0.1</span> <span class="param">--port</span> <span class="val">8080</span>
+</div>
+    <p>启动后在浏览器访问 <code>http://127.0.0.1:8080</code> 即可看到图形界面。</p>
+    <div class="tip">💡 <strong>提示：</strong>FlyClaw 无需注册任何账号或提供 API Key，开箱即用。</div>
+  </div>
+
+  <!-- Flight Query -->
+  <div class="section-card" id="flight-query">
+    <h2>✈️ 二、按航班号查询</h2>
+    <p>在「航班查询」页面选择「航班号查询」标签，输入航班号即可同时从 FR24、Google Flights、Airplanes.live 三大数据源并发检索航班信息。</p>
+
+    <h3>输入格式</h3>
+    <p>航班号由 <strong>航空公司代码（2-3位字母/数字）</strong> + <strong>数字编号</strong> 组成。</p>
+    <div class="code-block">
+<span class="cmt"># 中国国际航空 CA981（北京→纽约）</span>
+<span class="val">CA981</span>
+
+<span class="cmt"># 中国东方航空 MU5110</span>
+<span class="val">MU5110</span>
+
+<span class="cmt"># 四川航空 3U88（注意：航空公司代码可以字母+数字）</span>
+<span class="val">3U88</span>
+
+<span class="cmt"># 全日空 NH</span>
+<span class="val">NH859</span>
+</div>
+
+    <h3>返回信息</h3>
+    <p>查询结果包含：航班号、航空公司、出发/目的地机场（三字码+城市名）、计划出发/到达时间、航班状态（如延误）、机型、飞行高度/速度、数据来源。</p>
+
+    <div class="tip">💡 <strong>航线中继：</strong>如果航班号查询没有价格数据，FlyClaw 会自动根据发现的航线路由，发起第二阶段价格查询（Google Flights + Skiplagged），补充票价信息。</div>
+  </div>
+
+  <!-- Route Search -->
+  <div class="section-card" id="route-search">
+    <h2>🗺️ 三、按航线搜索</h2>
+    <p>在「航班查询」页面选择「航线搜索」标签，输入出发地和目的地以及出行日期，即可从全部数据源并发搜索航班信息及价格。</p>
+
+    <h3>基本参数</h3>
+    <table>
+      <tr><th>参数</th><th>说明</th><th>示例</th></tr>
+      <tr><td>出发地 *</td><td>IATA 代码 / 城市名（中英文）</td><td><code>PVG</code> / <code>上海</code> / <code>Shanghai</code></td></tr>
+      <tr><td>目的地 *</td><td>同上</td><td><code>JFK</code> / <code>纽约</code> / <code>New York</code></td></tr>
+      <tr><td>出发日期 *</td><td>YYYY-MM-DD 格式</td><td><code>2026-06-15</code></td></tr>
+      <tr><td>舱位等级</td><td>经济舱/超级经济舱/商务舱/头等舱</td><td>默认 <code>经济舱</code></td></tr>
+      <tr><td>货币</td><td>人民币/美元/保留原始</td><td>默认 <code>人民币</code></td></tr>
+    </table>
+
+    <h3>示例</h3>
+    <div class="code-block">
+<span class="cmt"># 上海 → 纽约，2026年6月15日出生</span>
+出发地: <span class="val">上海</span>
+目的地: <span class="val">纽约</span>
+出发日期: <span class="val">2026-06-15</span>
+
+<span class="cmt"># 北京 → 东京，商务舱，美元计价</span>
+出发地: <span class="val">北京</span>
+目的地: <span class="val">NRT</span>
+舱位等级: <span class="val">商务舱</span>
+货币: <span class="val">美元</span>
+</div>
+  </div>
+
+  <!-- City-level Search -->
+  <div class="section-card" id="city-search">
+    <h2>🏙️ 四、城市级智能搜索</h2>
+    <p>FlyClaw 内置了 <strong>7000+ 机场数据库</strong>，支持城市级别的自动展开搜索。输入城市名，会自动覆盖该城市的所有机场。</p>
+
+    <table>
+      <tr><th>输入</th><th>自动展开为</th></tr>
+      <tr><td><code>上海</code> / <code>Shanghai</code></td><td>PVG（浦东）+ SHA（虹桥）</td></tr>
+      <tr><td><code>北京</code> / <code>Beijing</code></td><td>PEK（首都）+ PKX（大兴）</td></tr>
+      <tr><td><code>纽约</code> / <code>New York</code></td><td>JFK + EWR + LGA</td></tr>
+      <tr><td><code>伦敦</code> / <code>London</code></td><td>LHR + LGW + STN + LTN + LCY</td></tr>
+      <tr><td><code>东京</code> / <code>Tokyo</code></td><td>NRT（成田）+ HND（羽田）</td></tr>
+    </table>
+
+    <div class="tip">💡 <strong>自动补全：</strong>输入出发地/目的地时，系统会提供实时机场建议下拉列表，点击即可选中。</div>
+    <div class="warn">⚠️ <strong>注意：</strong>已关闭/货运专用机场会被自动过滤，确保只搜索商业客运航班。</div>
+  </div>
+
+  <!-- Round Trip -->
+  <div class="section-card" id="round-trip">
+    <h2>🔄 五、往返搜索</h2>
+    <p>展开「高级选项」，填写 <strong>返程日期</strong>，即可搜索往返航班，同时获取去程和返程的航班信息及往返总价。</p>
+
+    <div class="code-block">
+出发地: <span class="val">上海</span>
+目的地: <span class="val">洛杉矶</span>
+出发日期: <span class="val">2026-06-15</span>
+返程日期: <span class="val">2026-06-25</span>
+</div>
+
+    <p>返回结果中会显示去程航班和返程航班信息。票价显示为「往返含税」完整价格。</p>
+  </div>
+
+  <!-- Advanced Options -->
+  <div class="section-card" id="advanced">
+    <h2>⚙️ 六、高级选项</h2>
+    <p>在航线搜索中点击「高级选项」可展开更多参数：</p>
+
+    <table>
+      <tr><th>参数</th><th>说明</th><th>可选值</th></tr>
+      <tr><td>成人</td><td>成人乘客数</td><td>1-9（默认 1）</td></tr>
+      <tr><td>儿童</td><td>儿童乘客数</td><td>0-9（默认 0）</td></tr>
+      <tr><td>婴儿</td><td>婴儿乘客数（不占座）</td><td>0-9（默认 0）</td></tr>
+      <tr><td>最多经停</td><td>允许的最大中转次数</td><td>仅直飞 / 1次 / 2次 / 不限</td></tr>
+      <tr><td>返程日期</td><td>往返搜索的返程日</td><td>YYYY-MM-DD</td></tr>
+      <tr><td>排序方式</td><td>结果排序规则</td><td>默认 / 价格最低 / 飞行最快 / 出发时间 / 到达时间</td></tr>
+      <tr><td>最大结果数</td><td>限制返回数量（留空不限制）</td><td>正整数</td></tr>
+    </table>
+  </div>
+
+  <!-- Config -->
+  <div class="section-card" id="config-manage">
+    <h2>🔧 七、配置管理</h2>
+    <p>在「配置管理」页面可以可视化编辑 FlyClaw 的所有设置，无需手动编辑 <code>config.yaml</code> 文件。</p>
+
+    <h3>六大数据源</h3>
+    <table>
+      <tr><th>数据源</th><th>说明</th><th>用途</th></tr>
+      <tr><td>FlightRadar24</td><td>全球航班跟踪</td><td>航班动态、实时位置、状态</td></tr>
+      <tr><td>Google Flights</td><td>Google 航班搜索</td><td>航线搜索、价格查询</td></tr>
+      <tr><td>Skiplagged</td><td>隐藏城市票价</td><td>价格补充、经停航班</td></tr>
+      <tr><td>飞猪 MCP</td><td>飞猪开放接口</td><td>中国国内航班价格</td></tr>
+      <tr><td>Airplanes.live</td><td>ADS-B 实时数据</td><td>航班实时位置追踪</td></tr>
+      <tr><td>Fast Flights</td><td>对比验证引擎</td><td>可选调试用</td></tr>
+    </table>
+
+    <h3>快捷键</h3>
+    <p>在配置页面按 <kbd>Ctrl+S</kbd> 或 <kbd>⌘+S</kbd> 可快速保存配置。</p>
+
+    <div class="warn">⚠️ <strong>注意：</strong>修改配置后需要点击「保存配置」才会写入 <code>config.yaml</code>。点击「恢复默认值」会加载默认配置但不会自动保存，仍需手动保存。</div>
+  </div>
+
+  <!-- API -->
+  <div class="section-card" id="api">
+    <h2>🌐 八、REST API 调用</h2>
+    <p>FlyClaw Web 服务器同时也是一个完整的 REST API 服务，可以通过 HTTP 请求直接调用。</p>
+
+    <h3>查询航班号</h3>
+    <div class="code-block">
+GET /api/query/flight?flight=<span class="val">CA981</span>&date=<span class="val">2026-06-15</span>&currency=<span class="val">cny</span>
+</div>
+
+    <h3>航线搜索</h3>
+    <div class="code-block">
+GET /api/search/route?from=<span class="val">上海</span>&to=<span class="val">纽约</span>&date=<span class="val">2026-06-15</span>&cabin=<span class="val">economy</span>&adults=<span class="val">1</span>&stops=<span class="val">0</span>&currency=<span class="val">cny</span>
+</div>
+
+    <h3>完整 API 列表</h3>
+    <table>
+      <tr><th>方法</th><th>路径</th><th>说明</th></tr>
+      <tr><td>GET</td><td><code>/api/info</code></td><td>服务器状态信息</td></tr>
+      <tr><td>GET</td><td><code>/api/query/flight</code></td><td>按航班号查询</td></tr>
+      <tr><td>GET</td><td><code>/api/search/route</code></td><td>按航线搜索</td></tr>
+      <tr><td>GET</td><td><code>/api/airports?q=</code></td><td>机场模糊搜索</td></tr>
+      <tr><td>GET</td><td><code>/api/airports/resolve?name=</code></td><td>机场名称解析</td></tr>
+      <tr><td>GET</td><td><code>/api/config</code></td><td>读取配置</td></tr>
+      <tr><td>POST</td><td><code>/api/config</code></td><td>保存配置（JSON body）</td></tr>
+    </table>
+
+    <div class="tip">💡 <strong>提示：</strong>API 返回 JSON 格式数据，可以直接在代码中解析使用。支持跨域访问。</div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section-card" id="faq">
+    <h2>❓ 九、常见问题</h2>
+
+    <h3>Q: 为什么 Google Flights 没有返回结果？</h3>
+    <p>Google Flights 在中国大陆地区可能访问受限。如果此数据源不可用，FlyClaw 会自动使用其他数据源（FR24、飞猪、Skiplagged、Airplanes.live）进行查询。你可以在配置中关闭 Google Flights 数据源以获得更快的响应速度。</p>
+
+    <h3>Q: 查询速度慢怎么办？</h3>
+    <p>可以通过以下方式优化：</p>
+    <ul>
+      <li>在配置中减少「全局超时」和「提前返回时间」</li>
+      <li>关闭不必要的数据源（如 Google Flights、Skiplagged）</li>
+      <li>设置「优先数据源」，一旦该源有结果立即返回</li>
+    </ul>
+
+    <h3>Q: 输入中文城市名能识别吗？</h3>
+    <p>可以。FlyClaw 内置 7000+ 个机场的中英文名称及别名，支持中文、英文、IATA 三字码混合输入。例如输入 <code>上海</code> 会自动映射到 <code>PVG</code> + <code>SHA</code>。</p>
+
+    <h3>Q: 价格数据来源是什么？</h3>
+    <p>价格数据来自飞猪（Fliggy MCP）、Google Flights 和 Skiplagged 三个独立数据源。不同来源的价格可能存在差异（含税/不含税、舱位差异等），FlyClaw 默认以人民币（CNY）统一输出并取最低价格。</p>
+
+    <h3>Q: 需要注册账号或 API Key 吗？</h3>
+    <p>不需要。FlyClaw 基于公开数据源，所有核心功能零 API Key 依赖，开箱即用。</p>
+
+    <h3>Q: 如何更新机场数据？</h3>
+    <p>机场数据在需要时自动更新（取决于配置中的 <code>airport_update_days</code>）。也可以在配置中设置自定义更新 URL。</p>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:40px 20px;color:var(--muted);font-size:0.8rem;border-top:1px solid var(--border);margin-top:40px;">
+  <p>FlyClaw v{{ version }} · <a href="https://github.com/AI4MSE/FlyClaw" target="_blank">GitHub</a> · Apache-2.0</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyClaw - 航班信息聚合查询</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --card-hover: #273548;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-hover: #7dd3fc;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --radius: 8px;
+  --radius-sm: 6px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+nav {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+nav .logo { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
+nav .logo span { color: var(--accent); }
+nav .links { display: flex; gap: 4px; }
+nav .links a {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+nav .links a:hover, nav .links a.active { color: var(--text); background: var(--card-hover); }
+nav .version { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+
+.container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+.hero {
+  text-align: center;
+  padding: 60px 20px 40px;
+}
+.hero .icon { font-size: 4rem; margin-bottom: 16px; }
+.hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+.hero h1 span { color: var(--accent); }
+.hero p { color: var(--muted); font-size: 1rem; max-width: 640px; margin: 0 auto; line-height: 1.8; }
+
+.status-row { display: flex; gap: 16px; margin-bottom: 40px; flex-wrap: wrap; }
+.status-card {
+  flex: 1; min-width: 180px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+}
+.status-card .value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+.status-card .label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+.cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 40px; }
+@media (max-width: 800px) { .cards { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.2s, transform 0.15s;
+  cursor: pointer;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card .icon { font-size: 1.8rem; margin-bottom: 14px; }
+.card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.card p { color: var(--muted); font-size: 0.825rem; line-height: 1.6; margin-bottom: 14px; }
+.card .cta { color: var(--accent); font-weight: 500; font-size: 0.85rem; display: flex; align-items: center; gap: 4px; }
+
+.api-section { margin-bottom: 40px; }
+.api-section h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; }
+
+.endpoint {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+.endpoint .method {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.method-get { background: rgba(74,222,128,0.15); color: var(--success); }
+.method-post { background: rgba(251,191,36,0.15); color: var(--warning); }
+.endpoint .path { font-family: 'SF Mono', 'Fira Code', monospace; color: var(--accent); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.endpoint .desc { color: var(--muted); font-size: 0.78rem; flex-shrink: 0; }
+
+footer {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+footer a { color: var(--muted); }
+footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">✈️ Fly<span>Claw</span></div>
+  <div class="links">
+    <a href="/" class="active">首页</a>
+    <a href="/guide">教程</a>
+    <a href="/config">配置</a>
+    <a href="/query">查询</a>
+  </div>
+  <div class="version">v{{ version }}</div>
+</nav>
+
+<div class="container">
+  <div class="hero">
+    <div class="icon">✈️</div>
+    <h1>Fly<span>Claw</span> 航班信息聚合查询</h1>
+    <p>轻量级航班信息聚合工具。多数据源并发查询——FR24、Google Flights、Skiplagged、飞猪、Airplanes.live。零 API Key 依赖，开箱即用。</p>
+  </div>
+
+  <div class="status-row" id="status-row">
+    <div class="status-card">
+      <div class="value" id="stat-version">--</div>
+      <div class="label">系统版本</div>
+    </div>
+    <div class="status-card">
+      <div class="value" id="stat-sources">--</div>
+      <div class="label">活跃数据源</div>
+    </div>
+    <div class="status-card">
+      <div class="value" id="stat-airports">--</div>
+      <div class="label">机场数据库</div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card" onclick="location.href='/guide'">
+      <div class="icon">📖</div>
+      <h3>使用教程</h3>
+      <p>快速上手 FlyClaw，了解航班号查询、航线搜索、高级选项等全部功能的详细用法和示例。</p>
+      <span class="cta">阅读教程 →</span>
+    </div>
+    <div class="card" onclick="location.href='/config'">
+      <div class="icon">⚙️</div>
+      <h3>配置管理</h3>
+      <p>管理六大数据源（FR24、Google Flights、Skiplagged、飞猪、Airplanes.live），调整查询参数与输出偏好。</p>
+      <span class="cta">打开配置 →</span>
+    </div>
+    <div class="card" onclick="location.href='/query'">
+      <div class="icon">🔍</div>
+      <h3>航班查询</h3>
+      <p>按航班号实时追踪，或按航线搜索。支持中英文城市名 / IATA 代码，城市级智能展开，多源聚合去重。</p>
+      <span class="cta">开始查询 →</span>
+    </div>
+  </div>
+
+  <div class="api-section">
+    <h2>REST API 接口</h2>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/query/flight?flight=CA981</span>
+      <span class="desc">按航班号查询</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/search/route?from=PVG&to=JFK&date=2026-04-01</span>
+      <span class="desc">按航线搜索（含价格）</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/airports?q=上海</span>
+      <span class="desc">机场模糊搜索</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/airports/resolve?name=浦东</span>
+      <span class="desc">机场解析（中文/英文/IATA）</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/config</span>
+      <span class="desc">读取配置</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/config</span>
+      <span class="desc">保存配置</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/info</span>
+      <span class="desc">服务器信息</span>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>FlyClaw v{{ version }} · <a href="https://github.com/AI4MSE/FlyClaw" target="_blank">GitHub</a> · Apache-2.0</p>
+</footer>
+
+<script>
+async function loadStatus() {
+  try {
+    const resp = await fetch('/api/info');
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      document.getElementById('stat-version').textContent = 'v' + data.version;
+      document.getElementById('stat-sources').textContent = data.enabled_sources.length + ' 个';
+      document.getElementById('stat-airports').textContent = (data.airport_count || 0).toLocaleString() + ' 个';
+    }
+  } catch (e) { /* ignore */ }
+}
+loadStatus();
+</script>
+</body>
+</html>
